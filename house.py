@@ -1,31 +1,51 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
-df = pd.read_csv(r'C:\Users\OS\Desktop\Workspace\python code\MachineLearn\Housing.csv')
+# Load and preprocess the dataset
+file_path = r'C:\Users\OS\Desktop\Workspace\FPT\Housing.csv'
+housing_data = pd.read_csv(file_path)
+
 label_encoders = {}
-categorical_columns = df.select_dtypes(include=['object']).columns
-
+categorical_columns = housing_data.select_dtypes(include=['object']).columns
 for col in categorical_columns:
     label_encoders[col] = LabelEncoder()
-    df[col] = label_encoders[col].fit_transform(df[col])
+    housing_data[col] = label_encoders[col].fit_transform(housing_data[col])
 
-X = df.drop('price', axis=1)
-y = df['price']
+# Splitting the dataset
+X = housing_data.drop('price', axis=1)
+y = housing_data['price']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Feature Scaling
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-model = LinearRegression()
-model.fit(X_train_scaled, y_train)
+# Train the model
+linear_model = LinearRegression()
+linear_model.fit(X_train_scaled, y_train)
 
-y_pred = model.predict(X_test_scaled)
+# Function to make predictions based on user input
+def predict_house_price(model, scaler):
+    inputs = []
+    for col in X.columns:
+        if col in categorical_columns:
+            value = input(f"Enter {col} (Available options: {housing_data[col].unique()}): ")
+            # Encoding the categorical input
+            value = label_encoders[col].transform([value])[0]
+        else:
+            value = float(input(f"Enter {col}: "))
+        inputs.append(value)
 
+    # Scaling the input
+    inputs_scaled = scaler.transform([inputs])
+    # Making prediction
+    predicted_price = model.predict(inputs_scaled)
+    return predicted_price[0]
 
-new_house = pd.DataFrame([[1,1,1,1,1,1,1,1,1,1,1,1]], columns=['area','bedrooms','bathrooms','stories','mainroad','guestroom','basement','hotwaterheating','airconditioning','parking','prefarea','furnishingstatus'])
-predicted_price = model.predict(new_house)
-print(f"Predicted price: {predicted_price}")
+# User input and prediction
+predicted_price = predict_house_price(linear_model, scaler)
+print(f"The predicted house price is: {predicted_price}")
